@@ -84,20 +84,49 @@ body{font-family:'Nunito',sans-serif;background:#0D1B4B;min-height:100vh;overflo
 .fbk.ok{background:#E8F5E9;color:#1B5E20;display:block;}
 .fbk.no{background:#FFEBEE;color:#B71C1C;display:block;}
 
-/* TRANSLATION CARDS */
+/* ── FIX: TRANSLATION CARDS ── */
 .tbox{margin-top:12px;padding:14px;background:linear-gradient(135deg,#FFF8E1,#FFFDE7);border-radius:14px;border:3px solid var(--yellow);display:none;}
 .tbox-lbl{font-family:'Bangers',cursive;font-size:clamp(14px,3.5vw,20px);color:var(--dark);letter-spacing:1px;display:block;margin-bottom:4px;}
-.tbox-sent{font-size:clamp(13px,3vw,16px);font-weight:800;color:var(--mid);margin-bottom:12px;padding:8px 12px;background:rgba(255,255,255,.8);border-radius:8px;border-left:4px solid var(--yellow);}
+.tbox-sent{font-size:clamp(13px,3vw,16px);font-weight:800;color:var(--mid);margin-bottom:12px;padding:8px 12px;background:rgba(255,255,255,.8);border-radius:8px;border-left:4px solid var(--yellow);word-break:break-word;}
+
+/* FIXED: responsive grid — 1 col on tiny screens, 3 cols on wider */
 .tcards{display:grid;grid-template-columns:1fr;gap:9px;}
-@media(min-width:480px){.tcards{grid-template-columns:1fr 1fr 1fr;}}
-.tcard{background:#fff;border:3px solid #9FA8DA;border-radius:14px;padding:clamp(10px,3vw,16px) clamp(8px,2.5vw,14px);cursor:pointer;text-align:center;font-size:clamp(11px,2.8vw,15px);font-weight:800;color:var(--dark);transition:all .2s;box-shadow:0 4px 0 #C5CAE9;display:flex;flex-direction:column;align-items:center;gap:6px;user-select:none;}
+@media(min-width:420px){.tcards{grid-template-columns:1fr 1fr 1fr;}}
+
+/* FIXED: tcard — proper text wrapping, min-height, no overflow */
+.tcard{
+  background:#fff;
+  border:3px solid #9FA8DA;
+  border-radius:14px;
+  padding:clamp(8px,2.5vw,14px) clamp(6px,2vw,12px);
+  cursor:pointer;
+  text-align:center;
+  font-size:clamp(11px,2.5vw,14px);
+  font-weight:800;
+  color:var(--dark);
+  transition:all .2s;
+  box-shadow:0 4px 0 #C5CAE9;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+  user-select:none;
+  /* FIXES: prevent text from overflowing */
+  word-break:break-word;
+  overflow-wrap:break-word;
+  hyphens:auto;
+  min-height:80px;
+  justify-content:center;
+}
 .tcard:hover{transform:translateY(-3px);border-color:var(--blue);box-shadow:0 7px 0 #1565C0;}
 .tcard:active{transform:scale(.96);}
 .tcard.correct{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border-color:var(--green);box-shadow:0 4px 0 #1B5E20;animation:popIn .35s ease;}
 .tcard.wrong{background:linear-gradient(135deg,#FFEBEE,#FFCDD2);border-color:var(--red);box-shadow:0 4px 0 #8B0000;animation:shk .35s;}
 .tcard.dis{pointer-events:none;opacity:.55;}
-.tltr{width:30px;height:30px;border-radius:50%;background:var(--mid);color:#fff;font-family:'Bangers',cursive;font-size:17px;display:flex;align-items:center;justify-content:center;}
-.tico{font-size:clamp(20px,5vw,28px);}
+.tltr{width:28px;height:28px;border-radius:50%;background:var(--mid);color:#fff;font-family:'Bangers',cursive;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tico{font-size:clamp(18px,4.5vw,26px);line-height:1;}
+/* FIXED: tcard text label — wraps properly */
+.tcard-text{font-size:clamp(10px,2.4vw,13px);line-height:1.35;word-break:break-word;overflow-wrap:break-word;}
 @keyframes popIn{0%{transform:scale(.88);}60%{transform:scale(1.07);}100%{transform:scale(1);}}
 
 /* RESULTS */
@@ -324,6 +353,15 @@ let mfl=[],mmat=0,matt=0,mlk=false;
 let l2i=0,l2ok=0,l3i=0,l3ok=0,l3t=0,tdone=false;
 let lovCb=null,dsrc=null,tch=null,tclone=null;
 
+// ── FIX: Touch listener references — store and clean up to prevent stacking ──
+let _tsFn=null,_tmFn=null,_teFn=null;
+function removeTouchListeners(){
+  if(_tsFn) document.removeEventListener('touchstart',_tsFn);
+  if(_tmFn) document.removeEventListener('touchmove',_tmFn);
+  if(_teFn) document.removeEventListener('touchend',_teFn);
+  _tsFn=_tmFn=_teFn=null;
+}
+
 function X(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function toast(m,t=''){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t;void el.offsetWidth;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),2400);}
@@ -488,6 +526,8 @@ function ckL3(){
     sfx.wrong();setTimeout(()=>{document.getElementById('dz3').classList.remove('no');fb.className='fbk';},2200);
   }
 }
+
+// ── FIX: buildTC uses .tcard-text wrapper for safe text rendering ──
 function buildTC(){
   const opt=TOPTS[l3i];
   const ltrs=['A','B','C'],icos=['🟡','🔵','🔴'];
@@ -496,9 +536,10 @@ function buildTC(){
     <div class="tcard" onclick="pickT(this,${o.ok})" data-ok="${o.ok}">
       <div class="tltr">${ltrs[i]}</div>
       <div class="tico">${icos[i]}</div>
-      <div>${X(o.t)}</div>
+      <div class="tcard-text">${X(o.t)}</div>
     </div>`).join('');
 }
+
 function pickT(el,ok){
   if(tdone)return;
   tdone=true;sfx.card();
@@ -522,10 +563,14 @@ function nxL3(){
   else rnL3();
 }
 
-// ── DRAG & DROP ──
+// ── DRAG & DROP — FIX: remove old touch listeners before adding new ones ──
 function drag(bid,did){
   const bk=document.getElementById(bid),dp=document.getElementById(did);
   if(!bk||!dp)return;
+
+  // Remove any previous touch listeners to prevent stacking
+  removeTouchListeners();
+
   [bk,dp].forEach(src=>{
     src.addEventListener('dragstart',e=>{if(!e.target.classList.contains('wchip'))return;dsrc=e.target;dsrc.classList.add('drag');e.dataTransfer.effectAllowed='move';});
     src.addEventListener('dragend',e=>{e.target.classList&&e.target.classList.remove('drag');});
@@ -535,14 +580,34 @@ function drag(bid,did){
   dp.addEventListener('drop',e=>{e.preventDefault();dp.classList.remove('over');if(dsrc){dsrc.classList.add('ind');dp.appendChild(dsrc);dsrc=null;}});
   bk.addEventListener('dragover',e=>e.preventDefault());
   bk.addEventListener('drop',e=>{e.preventDefault();if(dsrc&&dsrc.classList.contains('ind')){dsrc.classList.remove('ind');bk.appendChild(dsrc);dsrc=null;}});
-  // Touch
-  function ts(e){const c=e.target.closest('.wchip');if(!c)return;e.preventDefault();tch=c;tclone=c.cloneNode(true);tclone.style.cssText=`position:fixed;z-index:9999;opacity:.85;pointer-events:none;transform:scale(1.12) rotate(3deg);width:${c.offsetWidth}px;`;document.body.appendChild(tclone);mv(e.touches[0]);}
-  function tm(e){if(!tch)return;e.preventDefault();mv(e.touches[0]);}
-  function te(e){if(!tch||!tclone)return;tclone.remove();const t=e.changedTouches[0];const el=document.elementFromPoint(t.clientX,t.clientY);const td=el?.closest('.dropz');const tb=el?.closest('.wbank');if(td&&tch.closest('.dropz')!==td){tch.classList.add('ind');td.appendChild(tch);}else if(tb&&tch.classList.contains('ind')){tch.classList.remove('ind');tb.appendChild(tch);}tch=null;tclone=null;}
+
+  // Touch — defined as named functions so they can be removed later
   function mv(t){if(!tclone)return;tclone.style.left=(t.clientX-tclone.offsetWidth/2)+'px';tclone.style.top=(t.clientY-tclone.offsetHeight/2)+'px';}
-  document.addEventListener('touchstart',ts,{passive:false});
-  document.addEventListener('touchmove',tm,{passive:false});
-  document.addEventListener('touchend',te);
+
+  _tsFn = function(e){
+    const c=e.target.closest('.wchip');if(!c)return;
+    e.preventDefault();
+    tch=c;
+    tclone=c.cloneNode(true);
+    tclone.style.cssText=`position:fixed;z-index:9999;opacity:.85;pointer-events:none;transform:scale(1.12) rotate(3deg);width:${c.offsetWidth}px;`;
+    document.body.appendChild(tclone);mv(e.touches[0]);
+  };
+  _tmFn = function(e){if(!tch)return;e.preventDefault();mv(e.touches[0]);};
+  _teFn = function(e){
+    if(!tch||!tclone)return;
+    tclone.remove();
+    const t=e.changedTouches[0];
+    const el=document.elementFromPoint(t.clientX,t.clientY);
+    const td=el?.closest('.dropz');
+    const tb=el?.closest('.wbank');
+    if(td&&tch.closest('.dropz')!==td){tch.classList.add('ind');td.appendChild(tch);}
+    else if(tb&&tch.classList.contains('ind')){tch.classList.remove('ind');tb.appendChild(tch);}
+    tch=null;tclone=null;
+  };
+
+  document.addEventListener('touchstart',_tsFn,{passive:false});
+  document.addEventListener('touchmove',_tmFn,{passive:false});
+  document.addEventListener('touchend',_teFn);
 }
 
 // ── RESULTS ──
@@ -591,7 +656,7 @@ function showR(){
     </div>`;
   show('sc-r');sfx.lvlup();confetti();
 }
-function restart(){sc={m:0,l2:0,l3:0};l2i=0;l3i=0;l2ok=0;l3ok=0;l3t=0;show('sc-w');}
+function restart(){sc={m:0,l2:0,l3:0};l2i=0;l3i=0;l2ok=0;l3ok=0;l3t=0;removeTouchListeners();show('sc-w');}
 </script>
 </body>
 </html>
